@@ -9,15 +9,23 @@ import uuid
 
 import os
 import sys
+from dotenv import load_dotenv
 
 from werkzeug.wrappers import Response
+
+load_dotenv()
+
+key         = os.getenv("S3_ACCESS_KEY")
+secret      = os.getenv("S3_SECRET_ACCESS_KEY")
+
+print(key, secret)
 
 app = Flask(__name__)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    folder_path = 'folder'
-    bucket_name = 'bucket'
+    folder_path = 'ml-shoplifting/test_upload'
+    bucket_name = 'ml-shoplifting'
 
     if request.method == 'POST':
 
@@ -26,27 +34,31 @@ def upload_file():
             return render_template('exception.html', text=msg)
 
     file = request.files['image_data']
-    folder_path = request.form.get('folderpath')
-    bucket_name = request.form.get('bucketname')
+    # folder_path = request.form.get('folderpath')
+    # bucket_name = request.form.get('bucketname')
     path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, '/', secure_filename(file.filename)))
     filename, file_extension = os.path.splitext(path)
     filename_uuid = file.filename
     path_uuid = os.path.abspath(os.path.join(os.getcwd(), os.pardir, '', filename_uuid))
     file.save(path_uuid)
 
-    # print("filename", type(file.filename))
-    # print("filename1", type(secure_filename(file.filename)))
-    # print("folderpath", folder_path)
-    # print("bucket_name", bucket_name)
+    print("filename", type(file.filename))
+    print("filename1", type(secure_filename(file.filename)))
+    print("folderpath", folder_path)
+    print("bucket_name", bucket_name)
 
-    client = boto3.client('s3', aws_access_key_id='~~~~~~', aws_secret_access_key='~~~~~~~~~~~')
+    client = boto3.client('s3', aws_access_key_id=key, aws_secret_access_key=secret)
     transfer = S3Transfer(client)
-    # print('path_uuid', path_uuid)
-    # print("imagename", secure_filename(file.filename))
-    # print('filename', folder_path + "/" + secure_filename(file.filename))
+    file_name = folder_path + "/" + secure_filename(file.filename)
+
+    print('path_uuid', path_uuid)
+    print("imagename", secure_filename(file.filename))
+    print(file_name)
 
     transfer.upload_file(path_uuid, bucket_name, folder_path + "/" + secure_filename(file.filename))
-    response = client.put_object_acl(ACL='public_read', Bucket = bucket_name, Key = "%s/%s" % (folder_path, secure_filename(file.filename)))
+    response = client.put_object_acl(ACL='public-read', Bucket = bucket_name, Key = "%s/%s" % (folder_path, secure_filename(file.filename)))
+    s3_url = f"https://{bucket_name}.s3.amazonaws.com/{file_name}"
+    print(s3_url)
 
     return 'sucess'
 
