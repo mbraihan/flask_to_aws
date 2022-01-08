@@ -24,8 +24,8 @@ app = Flask(__name__)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    folder_path = 'ml-shoplifting/test_upload'
-    bucket_name = 'ml-shoplifting'
+    folder_path = ''
+    bucket_name = ''
 
     if request.method == 'POST':
 
